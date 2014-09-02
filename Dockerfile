@@ -3,11 +3,9 @@
 # TOKEN=<your token>
 # INVERVAL=<update period. e.g. "5m" or "1h">
 
-# Output will be written to /config/duck.log
-
 FROM phusion/baseimage:0.9.11
 
-MAINTAINER coppit
+MAINTAINER David Coppit <david@coppit.org>
 
 VOLUME ["/config"]
 
