@@ -4,28 +4,11 @@ MAINTAINER David Coppit <david@coppit.org>
 
 VOLUME ["/config"]
 
-ADD noip-duc-linux.tar.gz /root/
+# Add dynamic dns script
+ADD noip.sh /root/noip/noip.sh
+RUN chmod +x /root/noip/noip.sh
 
-# Do it this way to avoid creating a useless 100+ MB layer for the user to download
-RUN apt-get update && \
-  apt-get install -y make gcc && \
-  cd /root/noip-2.1.9-1 && \
-  make && \
-  mv noip2 /root && \
-  cd /root && \
-  rm -rf /root/noip-2.1.9-1 && \
-  apt-get remove -y make gcc && \
-  apt-get autoremove -y && \
-  apt-get autoclean -y
+# Create template config file
+ADD noip.conf /root/noip/noip.conf
 
-#RUN yum install -y make gcc && \
-#  cd /root/noip-2.1.9.1 && \
-#  make && \
-#  mv noip2 /root && \
-#  cd /root && \
-#  rm -rf /root/noip-2.1.9.1 && \
-#  yum history undo 3 -y
-
-ADD noip.sh /root/
-
-CMD /bin/bash -c '/root/noip.sh'
+CMD /root/noip/noip.sh

@@ -2,21 +2,18 @@ docker-no-ip
 ============
 
 This is a simple Docker container for running the [No-IP](http://www.noip.com/) dynamic DNS update script. It will keep
-your domain.ddns.net DNS alias up-to-date as your home IP changes.
+your domain.ddns.net DNS alias up-to-date as your home IP changes. The script runs every 5 minutes.
 
 Usage
 -----
 
 This docker image is available as a [trusted build on the docker index](https://index.docker.io/u/coppit/no-ip/).
 
-To set up the configuration file, create /config/dir/path and then run this docker container interactively:
+Run:
 
-`docker run -i --name=no-ip -v /config/dir/path:/config -t coppit/no-ip /root/noip2 -c /config/noip2.conf -C`
+`sudo docker run --name=noip -d -v /etc/localtime:/etc/localtime -v /config/dir/path:/config coppit/no-ip`
 
-Answer "N" to the question about running something after a successful update.
+When run for the first time, a file named noip.conf will be created in the config dir, and the container will exit. Edit
+this file, adding your username (email), password, and domains. Then rerun the command.
 
-Once the config is set up, run the container this way:
-
-`docker start no-ip`
-
-This container is stateless. If you don't need it anymore, you can `stop` and `remove` it.
+To check the status, run `docker logs noip`.
