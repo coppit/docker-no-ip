@@ -48,17 +48,24 @@ function ts {
 
 while true
 do
-  RESPONSE=$(curl -s -k --user-agent "$USER_AGENT" -u "$USERNAME:$PASSWORD" "https://dynupdate.no-ip.com/nic/update?hostname=$DOMAINS")
+  RESPONSE=$(curl -S -s -k --user-agent "$USER_AGENT" -u "$USERNAME:$PASSWORD" "https://dynupdate.no-ip.com/nic/update?hostname=$DOMAINS" 2>&1)
 
-  SUCCESS_REGEX='^(good|nochg) '
-
-  if [[ $RESPONSE =~ $SUCCESS_REGEX ]]
+  # Sometimes the API returns "nochg" without a space and ip address. It does this even if the password is incorrect.
+  if [[ $RESPONSE =~ ^(good|nochg) ]]
   then
     echo "$(ts) No-IP successfully called. Result was \"$RESPONSE\"."
-  else
+  elif [[ $RESPONSE =~ ^(nohost|badauth|badagent|abuse|!donator) ]]
+  then
     echo "$(ts) Something went wrong. Check your settings. Result was \"$RESPONSE\"."
     echo "$(ts) For an explanation of error codes, see http://www.noip.com/integrate/response"
     exit 2
+  elif [[ $RESPONSE =~ ^911 ]]
+  then
+    echo "$(ts) Server returned "911". Waiting for 30 minutes before trying again."
+    sleep 1800
+    continue
+  else
+    echo "$(ts) Couldn't update. Trying again in 5 minutes. Output from curl command was \"$RESPONSE\"."
   fi
 
   sleep 300
