@@ -36,12 +36,12 @@ elif [ "$PASSWORD" = "your password here" ]; then
   exit 1
 fi
 
-if [[ ! "$INTERVAL" =~ ^[0-9]+\ [mhd]$ ]]; then
-  echo "INTERVAL must be a number followed by m, h, or d. Example: 5 m"
+if [[ ! "$INTERVAL" =~ ^[0-9]+[mhd]$ ]]; then
+  echo "INTERVAL must be a number followed by m, h, or d. Example: 5m"
   exit 1
 fi
 
-if [[ $(echo $INTERVAL | awk '{print $2}') == 'm' && $(echo $INTERVAL | awk '{print $1}') -lt 5 ]]; then
+if [[ "${INTERVAL: -1}" == 'm' && "${INTERVAL:0:-1}" -lt 5 ]]; then
   echo "The shortest allowed INTERVAL is 5 minutes"
   exit 1
 fi
