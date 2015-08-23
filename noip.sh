@@ -36,6 +36,10 @@ elif [ "$PASSWORD" = "your password here" ]; then
   exit 1
 fi
 
+if [ -z "$INTERVAL" ]; then
+  INTERVAL='30m'
+fi
+
 if [[ ! "$INTERVAL" =~ ^[0-9]+[mhd]$ ]]; then
   echo "INTERVAL must be a number followed by m, h, or d. Example: 5m"
   exit 1
