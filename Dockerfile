@@ -1,4 +1,4 @@
-FROM phusion/baseimage:0.9.17
+FROM phusion/baseimage:0.9.19
 
 MAINTAINER David Coppit <david@coppit.org>
 
