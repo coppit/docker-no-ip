@@ -1,0 +1,148 @@
+#!/usr/bin/expect
+
+# An expect script to automate the creation of the config file for noip2.
+
+if {$argc != 4} {
+  send_error "\nERROR: Pass arguments <email> <password> <domains or group> <interval>.\n"
+  exit 1
+}
+
+set email [lindex $argv 0]
+set password [lindex $argv 1]
+# This can be a single domain name, a comma-delimited list, or a group name
+set domains [split [lindex $argv 2] ","]
+set interval [lindex $argv 3]
+
+set config_file "/config/no-ip2.generated.conf"
+
+spawn /files/noip2-x86_64 -C -c $config_file
+
+expect "Please enter the login/email string for no-ip.com"
+send "$email\r"
+
+expect "Please enter the password for user"
+send "$password\r"
+
+set number_updated 0
+
+expect {
+  timeout { send_user "\nERROR: Timed out looking for host information\n"; exit 1 }
+
+  eof { send_user "\nERROR: Hit EOF looking for host information\n"; exit 1 }
+
+  # The case where there are no registered domains
+  "No hosts are available for this user" {
+      send_error "\nERROR: No domains registered to the account ($domains).\n"
+      send_error "Please visit the No-Ip website and create one.\n"
+      exit 2
+  }
+
+  # If there is only one group, verify that it's the one we want to update
+  -re "Only one group \\\[(.*)\\\] is registered to this account" {
+    if {[llength $domains] != 1} {
+      send_error "\nThere is only one registered group, but more than one was provided to be updated.\n"
+      exit 2
+    } elseif {$expect_out(1,string) != [lindex $domains 0]} {
+      send_error "\nERROR: Group registered to the account ($expect_out(1,string)) does not match expected group ($domains).\n"
+      send_error "Check your local config file and No-Ip website config.\n"
+      send_error "If $domains is a host name, then remove the group in the No-Ip website, or change to use the group here.\n"
+      exit 1
+    } else {
+      send_user "\nThere is only one registered group, and it is the expected one\n"
+      incr number_updated
+    }
+  }
+
+  # If there are multiple groups, then we need to loop over them
+  -re "\[0-9] groups are registered to this account" {
+    expect "Do you wish to have them all updated?"
+    send "n"
+
+    # Start looking for a matching group
+    expect {
+      timeout { send_user "\nERROR: Timed out processing groups one-by-one\n"; exit 1 }
+
+      eof { send_user "\nERROR: Hit EOF processing groups one-by-one\n"; exit 1 }
+
+      -re "Do you wish to have group \\\[(.*)\\\] updated" {
+        # Matching group found, so answer "y"
+        if {[lsearch $domains $expect_out(1,string)] != -1} {
+          send "y"
+          incr number_updated
+          exp_continue
+        # Not a match, so answer "n"
+        } else {
+          send "n"
+          exp_continue
+        }
+      }
+
+      # If we don't find a match, exit. Check for errors afterward
+      "Nothing selected" { }
+
+      # If we do find a match, the noip2 will prompt for the update interval
+      "Please enter an update interval" { }
+    }
+  }
+
+  # If there is only one host, verify that it's the one we want to update
+  -re "Only one host \\\[(.*)\\\] is registered to this account" {
+    if {[llength $domains] != 1} {
+      send_error "\nThere is only one registered domain, but more than one was provided to be updated.\n"
+      exit 2
+    } elseif {$expect_out(1,string) != [lindex $domains 0]} {
+      send_error "\nERROR: Domain registered to the account ($expect_out(1,string)) does not match expected domain ($domains).\n"
+      send_error "Check your local config file and No-Ip website config.\n"
+      exit 1
+    } else {
+      send_user "\nThere is only one registered domain, and it is the expected one\n"
+      incr number_updated
+    }
+  }
+
+  # If there are multiple hosts, then we need to loop over them
+  -re "\[0-9] hosts are registered to this account" {
+    expect "Do you wish to have them all updated?"
+    send "n"
+
+    # Start looking for a matching host
+    expect {
+      timeout { send_user "\nERROR: Timed out processing hosts one-by-one\n"; exit 1 }
+
+      eof { send_user "\nERROR: Hit EOF processing hosts one-by-one\n"; exit 1 }
+
+      -re "Do you wish to have host \\\[(.*)\\\] updated" {
+        # Matching host found, so answer "y"
+        if {[lsearch $domains $expect_out(1,string)] != -1} {
+          send "y"
+          incr number_updated
+          exp_continue
+        # Not a match, so answer "n"
+        } else {
+          send "n"
+          exp_continue
+        }
+      }
+
+      # If we don't find a match, exit. Check for errors afterward
+      "Nothing selected" { }
+
+      # If we do find a match, the noip2 will prompt for the update interval
+      "Please enter an update interval" { }
+    }
+  }
+}
+
+if {[llength $domains] != $number_updated} {
+  send_error "\n[llength $domains] hosts or groups were supposed to be updated, but only $number_updated were found\n"
+  exit 2
+}
+
+send "$interval\r"
+
+expect "Do you wish to run something at successful update"
+send "n"
+
+send_user "\nFinished creating config file\n"
+
+close

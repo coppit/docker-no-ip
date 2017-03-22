@@ -1,14 +1,17 @@
 #!/bin/bash
 
+SOURCE_CONF=/config/noip.conf
+GENERATED_CONF=/config/no-ip2.generated.conf
+
 # Search for custom config file, if it doesn't exist, copy the default one
-if [ ! -f /config/noip.conf ]; then
+if [ ! -f "$SOURCE_CONF" ]; then
   echo "Creating config file. Please do not forget to enter your info in noip.conf."
-  cp /root/noip/noip.conf /config/noip.conf
-  chmod a+w /config/noip.conf
+  cp /files/noip.conf "$SOURCE_CONF"
+  chmod a+w "$SOURCE_CONF"
   exit 1
 fi
 
-tr -d '\r' < /config/noip.conf > /tmp/noip.conf
+tr -d '\r' < "$SOURCE_CONF" > /tmp/noip.conf
 
 . /tmp/noip.conf
 
@@ -16,7 +19,7 @@ if [ -z "$DOMAINS" ]; then
   echo "DOMAINS must be defined in noip.conf"
   exit 1
 elif [ "$DOMAINS" = "foo.ddns.net" ]; then
-  echo "Please enter your domain in noip.conf"
+  echo "Please enter your domain/group list in noip.conf"
   exit 1
 fi
 
@@ -45,12 +48,10 @@ if [[ ! "$INTERVAL" =~ ^[0-9]+[mhd]$ ]]; then
   exit 1
 fi
 
-if [[ "${INTERVAL: -1}" == 'm' && "${INTERVAL:0:-1}" -lt 5 ]]; then
+if [[ "${INTERVAL: -1}" == 'm' && "${INTERVAL%?}" -lt 5 ]]; then
   echo "The shortest allowed INTERVAL is 5 minutes"
   exit 1
 fi
-
-USER_AGENT="coppit docker no-ip/.1 $USERNAME"
 
 #-----------------------------------------------------------------------------------------------------------------------
 
@@ -60,27 +61,42 @@ function ts {
 
 #-----------------------------------------------------------------------------------------------------------------------
 
+# Convert to minutes
+if [[ "${INTERVAL: -1}" == 'h' ]]; then
+  INTERVAL=$(( ${INTERVAL%?}*60 ))
+elif [[ "${INTERVAL: -1}" == 'd' ]]; then
+  INTERVAL=$(( ${INTERVAL%?}*60*24 ))
+fi
+
+# Create the binary configuration file used by noip2.
+# This comparison also works if $GENERATED_CONF is missing
+if [[ "$SOURCE_CONF" -nt "$GENERATED_CONF" ]]; then
+  expect /files/create_config.exp "$USERNAME" "$PASSWORD" "$DOMAINS" "$INTERVAL"
+else
+  echo "$(ts) $GENERATED_CONF is older than $SOURCE_CONF, so not regenerating it"
+fi
+
 while true
 do
-  RESPONSE=$(curl -S -s -k --user-agent "$USER_AGENT" -u "$USERNAME:$PASSWORD" "https://dynupdate.no-ip.com/nic/update?hostname=$DOMAINS" 2>&1)
+  echo "$(ts) Launching the noip2 daemon"
+  /files/noip2-x86_64 -c "$GENERATED_CONF"
 
-  # Sometimes the API returns "nochg" without a space and ip address. It does this even if the password is incorrect.
-  if [[ $RESPONSE =~ ^(good|nochg) ]]
-  then
-    echo "$(ts) No-IP successfully called. Result was \"$RESPONSE\"."
-  elif [[ $RESPONSE =~ ^(nohost|badauth|badagent|abuse|!donator) ]]
-  then
-    echo "$(ts) Something went wrong. Check your settings. Result was \"$RESPONSE\"."
-    echo "$(ts) For an explanation of error codes, see http://www.noip.com/integrate/response"
-    exit 2
-  elif [[ $RESPONSE =~ ^911 ]]
-  then
-    echo "$(ts) Server returned "911". Waiting for 30 minutes before trying again."
-    sleep 1800
-    continue
-  else
-    echo "$(ts) Couldn't update. Trying again in 5 minutes. Output from curl command was \"$RESPONSE\"."
-  fi
+  # Give it a few seconds to do the first update. This helps avoid questions about "Last IP Address set 0.0.0.0"
+  sleep 5
 
-  sleep $INTERVAL
+  while true
+  do
+    output=$(/files/noip2-x86_64 -c "$GENERATED_CONF" -S 2>&1)
+
+    echo "$(ts) Current status"
+    echo "$output"
+
+    if [[ "$output" != *"started as"* ]]; then
+      echo "$(ts) ERROR: noip2 daemon has stopped running. Restarting it in 60 seconds."
+      sleep 60
+      break
+    fi
+
+    sleep 60
+  done
 done
