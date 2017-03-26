@@ -72,6 +72,12 @@ fi
 # This comparison also works if $GENERATED_CONF is missing
 if [[ "$SOURCE_CONF" -nt "$GENERATED_CONF" ]]; then
   expect /files/create_config.exp "$USERNAME" "$PASSWORD" "$DOMAINS" "$INTERVAL"
+
+  if [[ $? != 0 ]]; then
+    echo ""
+    echo "$(ts) Failed to create noip2 configuration file $GENERATED_CONF. Exiting"
+    exit $?
+  fi
 else
   echo "$(ts) $GENERATED_CONF is older than $SOURCE_CONF, so not regenerating it"
 fi
