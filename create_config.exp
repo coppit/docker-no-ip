@@ -37,82 +37,34 @@ expect {
       exit 2
   }
 
-  # If there is only one group, verify that it's the one we want to update
-  -re "Only one group \\\[(.*)\\\] is registered to this account" {
+  # If there is only one group or host, verify that it's the one we want to update
+  -re "Only one (.*) \\\[(.*)\\\] is registered to this account" {
     if {[llength $domains] != 1} {
-      send_error "\nThere is only one registered group, but more than one was provided to be updated.\n"
+      send_error "\nThere is only one registered host or group, but more than one was provided to be updated.\n"
       exit 2
-    } elseif {$expect_out(1,string) != [lindex $domains 0]} {
-      send_error "\nERROR: Group registered to the account ($expect_out(1,string)) does not match expected group ($domains).\n"
+    } elseif {$expect_out(2,string) != [lindex $domains 0]} {
+      send_error "\nERROR: $expect_out(1,string) registered to the account ($expect_out(2,string)) does not match expected value ($domains).\n"
       send_error "Check your local config file and No-Ip website config.\n"
       send_error "If $domains is a host name, then remove the group in the No-Ip website, or change to use the group here.\n"
       exit 1
     } else {
-      send_user "\nThere is only one registered group, and it is the expected one\n"
+      send_user "\nThere is only one registered $expect_out(1,string), and it is the expected one\n"
       incr number_updated
     }
   }
 
-  # If there are multiple groups, then we need to loop over them
-  -re "\[0-9] groups are registered to this account" {
-    expect "Do you wish to have them all updated?"
+  # If there are multiple hosts and groups, then we need to loop over them
+  "Do you wish to have them all updated?" {
     send "n"
 
-    # Start looking for a matching group
+    # Start looking for a matching host or group
     expect {
-      timeout { send_user "\nERROR: Timed out processing groups one-by-one\n"; exit 1 }
+      timeout { send_user "\nERROR: Timed out processing registered hosts and groups one-by-one\n"; exit 1 }
 
-      eof { send_user "\nERROR: Hit EOF processing groups one-by-one\n"; exit 1 }
+      eof { send_user "\nERROR: Hit EOF processing hosts and groups one-by-one\n"; exit 1 }
 
-      -re "Do you wish to have group \\\[(.*)\\\] updated" {
+      -re "Do you wish to have .* \\\[(.*)\\\] updated" {
         # Matching group found, so answer "y"
-        if {[lsearch $domains $expect_out(1,string)] != -1} {
-          send "y"
-          incr number_updated
-          exp_continue
-        # Not a match, so answer "n"
-        } else {
-          send "n"
-          exp_continue
-        }
-      }
-
-      # If we don't find a match, exit. Check for errors afterward
-      "Nothing selected" { }
-
-      # If we do find a match, the noip2 will prompt for the update interval
-      "Please enter an update interval" { }
-    }
-  }
-
-  # If there is only one host, verify that it's the one we want to update
-  -re "Only one host \\\[(.*)\\\] is registered to this account" {
-    if {[llength $domains] != 1} {
-      send_error "\nThere is only one registered domain, but more than one was provided to be updated.\n"
-      exit 2
-    } elseif {$expect_out(1,string) != [lindex $domains 0]} {
-      send_error "\nERROR: Domain registered to the account ($expect_out(1,string)) does not match expected domain ($domains).\n"
-      send_error "Check your local config file and No-Ip website config.\n"
-      exit 1
-    } else {
-      send_user "\nThere is only one registered domain, and it is the expected one\n"
-      incr number_updated
-    }
-  }
-
-  # If there are multiple hosts, then we need to loop over them
-  -re "\[0-9] hosts are registered to this account" {
-    expect "Do you wish to have them all updated?"
-    send "n"
-
-    # Start looking for a matching host
-    expect {
-      timeout { send_user "\nERROR: Timed out processing hosts one-by-one\n"; exit 1 }
-
-      eof { send_user "\nERROR: Hit EOF processing hosts one-by-one\n"; exit 1 }
-
-      -re "Do you wish to have host \\\[(.*)\\\] updated" {
-        # Matching host found, so answer "y"
         if {[lsearch $domains $expect_out(1,string)] != -1} {
           send "y"
           incr number_updated
