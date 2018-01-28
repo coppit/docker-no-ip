@@ -3,12 +3,22 @@
 SOURCE_CONF=/config/noip.conf
 GENERATED_CONF=/config/no-ip2.generated.conf
 
-# Search for custom config file, if it doesn't exist, copy the default one
+# Search for custom config file, if it doesn't exist, create one.
 if [ ! -f "$SOURCE_CONF" ]; then
-  echo "Creating config file. Please do not forget to enter your info in noip.conf."
-  cp /files/noip.conf "$SOURCE_CONF"
+  echo "Creating config file."
+
+  echo "# This is an email address
+USERNAME='$USERNAME'
+
+PASSWORD='$PASSWORD'
+
+# Your hostname, group name, or a comma-delimited list of a mix of them.
+DOMAINS='$DOMAINS'
+
+# Examples: 5 m, 5 h, 5 d. Minimum is 5 minutes.
+INTERVAL='$INTERVAL' " >> "$SOURCE_CONF"
+
   chmod a+w "$SOURCE_CONF"
-  exit 1
 fi
 
 tr -d '\r' < "$SOURCE_CONF" > /tmp/noip.conf

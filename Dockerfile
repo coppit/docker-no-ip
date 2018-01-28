@@ -2,7 +2,11 @@ FROM phusion/baseimage:0.9.19
 
 MAINTAINER David Coppit <david@coppit.org>
 
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND="noninteractive" \
+    USERNAME="email@example.com" \
+    PASSWORD="your password here" \
+    DOMAINS="foo.ddns.net" \
+    INTERVAL="30m"
 
 # Speed up APT
 RUN echo "force-unsafe-io" > /etc/dpkg/dpkg.cfg.d/02apt-speedup \
@@ -24,7 +28,7 @@ RUN set -x \
   && mv /files/noip-2.1.9-1/binaries/noip2-x86_64 /files \
   && rm -rf /files/noip-2.1.9-1 /files/noip-duc-linux.tar.gz
 
-COPY ["noip.conf", "create_config.exp", "noip.sh", "/files/"]
+COPY ["create_config.exp", "noip.sh", "/files/"]
 RUN chmod +x /files/noip.sh
 
 CMD /files/noip.sh
