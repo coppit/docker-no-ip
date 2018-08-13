@@ -24,7 +24,7 @@ RUN set -x \
   && mv /files/noip-2.1.9-1/binaries/noip2-x86_64 /files \
   && rm -rf /files/noip-2.1.9-1 /files/noip-duc-linux.tar.gz
 
-COPY ["noip.conf", "create_config.exp", "noip.sh", "/files/"]
-RUN chmod +x /files/noip.sh
+COPY ["noip.conf", "create_config.exp", "noip.py", "/files/"]
+RUN chmod +x /files/noip.py
 
-CMD /files/noip.sh
+CMD /files/noip.py
