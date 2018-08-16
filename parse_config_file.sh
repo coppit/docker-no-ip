@@ -136,7 +136,7 @@ merge_config_vars_and_env_vars() {
   SAFE_CONFIG_FILE=$1
 
   . "$SAFE_CONFIG_FILE"
-  export $(grep = "$SAFE_CONFIG_FILE" | cut -d= -f1)
+  export $(grep = "$SAFE_CONFIG_FILE" | grep -v '^ *#' | cut -d= -f1)
 
   # Env vars take precedence
   . "$ENV_VARS"
