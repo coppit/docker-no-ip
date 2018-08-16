@@ -35,7 +35,11 @@ export > /etc/envvars
 PATH=/bin:/sbin:/usr/bin
 
 # run all scripts in the run_once folder
-/bin/run-parts /etc/run_once
+if ! /bin/run-parts /etc/run_once
+then
+  echo "Run-once scripts failed. Stopping container"
+  shutdown
+fi
 
 exec env - PATH=$PATH runsvdir -P /etc/service &
 
