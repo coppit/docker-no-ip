@@ -38,6 +38,9 @@ RUN set -x \
   && mv /files/noip-2.1.9-1/noip2 /files \
   && rm -rf /files/noip-2.1.9-1 /files/noip-duc-linux.tar.gz
 
+#Compatibilty with x86_64 based scripts
+RUN ln -s /files/noip2 /files/noip2-x86_64
+
 COPY ["noip.conf", "create_config.exp", "/files/"]
 
 # run-parts ignores files with "." in them
