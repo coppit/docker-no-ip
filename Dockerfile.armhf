@@ -1,6 +1,6 @@
-FROM arm32v6/alpine
+FROM resin/raspberry-pi-alpine
 
-MAINTAINER David Coppit <david@coppit.org>
+LABEL maintainer="David Coppit<david@coppit.org>"
 
 ENV TERM=xterm-256color
 
@@ -13,7 +13,7 @@ apk --update upgrade && \
 apk add bash curl htop runit && \
 \
 # Needed by our code
-apk add expect libc6-compat && \
+apk add expect libc6-compat make gcc libc-dev && \
 \
 rm -rf /var/cache/apk/* && \
 \
@@ -33,8 +33,9 @@ ADD https://www.noip.com/client/linux/noip-duc-linux.tar.gz /files/
 
 RUN set -x \
   && chmod a+rwX /files \
-  && tar -C /files -x -f /files/noip-duc-linux.tar.gz noip-2.1.9-1/binaries/noip2-x86_64 \
-  && mv /files/noip-2.1.9-1/binaries/noip2-x86_64 /files \
+  && tar -C /files -x -f /files/noip-duc-linux.tar.gz  \
+  && cd /files/noip-2.1.9-1 && make \ 
+  && mv /files/noip-2.1.9-1/noip2 /files \
   && rm -rf /files/noip-2.1.9-1 /files/noip-duc-linux.tar.gz
 
 COPY ["noip.conf", "create_config.exp", "/files/"]
@@ -44,4 +45,6 @@ COPY parse_config_file.sh /etc/run_once/parse_config_file
 RUN chmod +x /etc/run_once/parse_config_file
 
 COPY noip.sh /etc/service/noip/run
+#Look into using intermediate builder image instead
+RUN apk del gcc make libc-dev
 RUN chmod +x /etc/service/noip/run
