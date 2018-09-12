@@ -1,4 +1,4 @@
-FROM resin/raspberry-pi-alpine
+FROM arm32v6/alpine
 
 LABEL maintainer="David Coppit<david@coppit.org>"
 
