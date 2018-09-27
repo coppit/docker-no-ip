@@ -13,14 +13,24 @@ function ts {
 while true
 do
   echo "$(ts) Launching the noip2 daemon"
-  /files/noip2-x86_64 -c "$GENERATED_CONFIG_FILE"
+  if [[ -z $(uname -a | grep "arm") ]]
+  then
+    /files/noip2-x86_64 -c "$GENERATED_CONFIG_FILE"
+  else
+    /usr/local/bin/noip2
+  fi
 
   # Give it a few seconds to do the first update. This helps avoid questions about "Last IP Address set 0.0.0.0"
   sleep 5
 
   while true
   do
-    output=$(/files/noip2-x86_64 -c "$GENERATED_CONFIG_FILE" -S 2>&1)
+    if [[ -z $(uname -a | grep "arm") ]]
+    then
+      output=$(/files/noip2-x86_64 -c "$GENERATED_CONFIG_FILE" -S 2>&1)
+    else
+      output=$(/usr/local/bin/noip2 -S 2>&1)
+    fi
 
     echo "$(ts) Current status"
     echo "$output"

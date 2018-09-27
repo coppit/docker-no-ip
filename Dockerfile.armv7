@@ -1,0 +1,18 @@
+FROM noip-config
+
+MAINTAINER David Coppit <david@coppit.org>
+
+ENV TERM=xterm-256color
+
+RUN true && \
+# RunIt stuff
+adduser -h /home/user-service -s /bin/sh -D user-service -u 2000 && \
+chown user-service:user-service /home/user-service && \
+mkdir -p /etc/run_once /etc/service
+
+# Boilerplate startup code
+COPY ./boot.sh /sbin/boot.sh
+RUN chmod +x /sbin/boot.sh
+CMD [ "/sbin/boot.sh" ]
+
+COPY ["config/no-ip2.conf", "/usr/local/etc/"]
