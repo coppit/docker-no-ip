@@ -18,7 +18,7 @@ The second mode is with a config file. To create a template config file, run:
 `sudo docker run --name=noip -d -v /etc/localtime:/etc/localtime -v /config/dir/path:/config coppit/no-ip`
 
 When run for the first time, a file named noip.conf will be created in the config dir, and the container will exit. Edit
-this file, adding your username (email), password, domains, and update interval. Then rerun the command to start the
+this file, adding your username (email), password, domains, and update interval in minutes. Then rerun the command to start the
 container.
 
 In both modes, a binary config file /config/dir/path/no-ip2.generated.conf will be generated. Please do not edit this
