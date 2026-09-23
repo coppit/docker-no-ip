@@ -1,3 +1,8 @@
+> [!CAUTION]
+> **This project is retired.**
+>
+> Please use the [official No-IP Docker image](https://www.noip.com/support/knowledgebase/ip-linux-duc-docker).
+
 docker-no-ip
 ============
 
